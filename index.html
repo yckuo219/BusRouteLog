@@ -5,7 +5,7 @@
   <title>校車 GPS 記錄</title>
   <script>
     let watchId = null;
-    const scriptURL = "https://script.google.com/macros/s/AKfycbzLfOR3D5QfYlBIrUcrV10OV8hM62biSgAvRUmwMM0w0vWJ_BMk4JMEivpO5VyOJv7K/exec"; // ← 這裡貼上你的 Apps Script 網址
+    const scriptURL = "https://script.google.com/macros/s/AKfycbwCnwNsRQaYtcjQvPLoLfGCGvFBWQGyx5g3_w6MWtgTJLInKGRPEq-j28g-hamnTOS-/exec"; // ← 這裡貼上你的 Apps Script 網址
 
     function startRecording() {
       if (!navigator.geolocation) {
@@ -20,10 +20,11 @@
 
         try {
           await fetch(scriptURL, {
-            method: 'POST',
-            body: JSON.stringify({ lat: latitude, lng: longitude }),
-            headers: { 'Content-Type': 'application/json' }
-          });
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ lat: latitude, lng: longitude })
+});
+
         } catch (err) {
           console.error("上傳失敗", err);
         }
