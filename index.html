@@ -16,7 +16,7 @@
       watchId = navigator.geolocation.watchPosition(async pos => {
         const { latitude, longitude } = pos.coords;
         document.getElementById("output").textContent =
-          `座標: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+          `座標: ${latitude.toFixed(7)}, ${longitude.toFixed(7)}`;
 
         // 使用 Form POST 避免 CORS
         const formData = new URLSearchParams();
