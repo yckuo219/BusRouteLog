@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>校車 GPS 記錄</title>
   <script>
-    let watchId = null;
+    let timer = null;
     const scriptURL = "https://script.google.com/macros/s/AKfycbzhqtkOrzngX2ArPeyMsDihBnJUA5TBzhBf5q4iHol8oyP740bbTowfUfxcvxE9QlMx/exec";
 
     function startRecording() {
@@ -13,36 +13,39 @@
         return;
       }
 
-      watchId = navigator.geolocation.watchPosition(async pos => {
-        const { latitude, longitude } = pos.coords;
-        document.getElementById("output").textContent =
-          `座標: ${latitude.toFixed(7)}, ${longitude.toFixed(7)}`;
+      alert("開始記錄，每 10 秒上傳一次位置");
 
-        // 使用 Form POST 避免 CORS
-        const formData = new URLSearchParams();
-        formData.append('lat', latitude);
-        formData.append('lng', longitude);
+      timer = setInterval(() => {
+        navigator.geolocation.getCurrentPosition(async pos => {
+          const { latitude, longitude } = pos.coords;
+          document.getElementById("output").textContent =
+            `座標: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
 
-        try {
-          const res = await fetch(scriptURL, {
-            method: 'POST',
-            body: formData
-          });
+          const formData = new URLSearchParams();
+          formData.append('lat', latitude);
+          formData.append('lng', longitude);
 
-          const text = await res.text();
-          console.log("上傳成功: ", text);
-        } catch (err) {
-          console.error("上傳失敗", err);
-        }
-      }, err => {
-        alert("定位失敗：" + err.message);
-      });
+          try {
+            const res = await fetch(scriptURL, {
+              method: 'POST',
+              body: formData
+            });
+            const text = await res.text();
+            console.log("上傳成功:", text);
+          } catch (err) {
+            console.error("上傳失敗", err);
+          }
+        }, err => {
+          console.error("定位失敗：" + err.message);
+        });
+      }, 10000); // 每 10 秒執行一次
     }
 
     function stopRecording() {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
-        alert("停止記錄");
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+        alert("已停止記錄");
       }
     }
   </script>
