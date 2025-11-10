@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>校車 GPS 記錄</title>
+  <script>
+    let watchId = null;
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzLfOR3D5QfYlBIrUcrV10OV8hM62biSgAvRUmwMM0w0vWJ_BMk4JMEivpO5VyOJv7K/exec"; // ← 這裡貼上你的 Apps Script 網址
+
+    function startRecording() {
+      if (!navigator.geolocation) {
+        alert("此瀏覽器不支援定位");
+        return;
+      }
+
+      watchId = navigator.geolocation.watchPosition(async pos => {
+        const { latitude, longitude } = pos.coords;
+        document.getElementById("output").textContent =
+          `座標: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+
+        try {
+          await fetch(scriptURL, {
+            method: 'POST',
+            body: JSON.stringify({ lat: latitude, lng: longitude }),
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } catch (err) {
+          console.error("上傳失敗", err);
+        }
+      }, err => {
+        alert("定位失敗：" + err.message);
+      });
+    }
+
+    function stopRecording() {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        alert("停止記錄");
+      }
+    }
+  </script>
+</head>
+<body>
+  <h2>校車 GPS 記錄系統</h2>
+  <button onclick="startRecording()">開始記錄</button>
+  <button onclick="stopRecording()">停止記錄</button>
+  <p id="output">尚未開始記錄</p>
+</body>
+</html>
