@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>校車 GPS 記錄</title>
+  <title>GPS 記錄</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
@@ -34,7 +34,7 @@
         return;
       }
 
-      alert("開始記錄，每 10 秒上傳一次位置");
+      alert("開始記錄，每 10 秒上傳一次位置（一開始有緩衝時間）");
 
       timer = setInterval(() => {
         navigator.geolocation.getCurrentPosition(async pos => {
