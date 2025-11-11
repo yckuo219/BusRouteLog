@@ -1,119 +1,59 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html>
 <head>
   <meta charset="utf-8">
-  <title>校車 GPS 即時路線圖</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- ✅ 使用新版 Leaflet（移除 integrity） -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    crossorigin=""
-  />
-
-  <style>
-    html, body { height: 100%; margin: 0; }
-    #map { height: 100%; width: 100%; }
-    #status {
-      position: absolute;
-      top: 10px; left: 10px;
-      background: rgba(255,255,255,0.9);
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-family: sans-serif;
-      box-shadow: 0 0 6px rgba(0,0,0,0.2);
-      z-index: 1000;
-    }
-  </style>
-</head>
-<body>
-  <div id="map"></div>
-  <div id="status">資料載入中...</div>
-
-  <!-- ✅ Leaflet JS（移除 integrity） -->
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    crossorigin="">
-  </script>
-
+  <title>校車 GPS 記錄</title>
   <script>
-    // === 設定 ===
-    const sheetID = "12KJUVKw9hKgWN2894agnsSwQoO0X8zI4_P2_Q9kvzyU";  // ← 換成你的試算表 ID
-    const sheetURL = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json`;
-    const refreshInterval = 10000; // 每 10 秒更新
+    let timer = null;
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzhqtkOrzngX2ArPeyMsDihBnJUA5TBzhBf5q4iHol8oyP740bbTowfUfxcvxE9QlMx/exec";
 
-    let map, route, startMarker, endMarker;
-    let lastDataLength = 0;
-
-    // === 抓資料 ===
-    async function fetchData() {
-      try {
-        const res = await fetch(sheetURL + "&rand=" + Math.random());
-        const text = await res.text();
-        const json = JSON.parse(text.substr(47).slice(0, -2));
-        const rows = json.table.rows.map(r => ({
-          time: r.c[0]?.v,
-          lat: parseFloat(r.c[1]?.v),
-          lng: parseFloat(r.c[2]?.v)
-        })).filter(d => !isNaN(d.lat) && !isNaN(d.lng));
-        rows.sort((a, b) => new Date(a.time) - new Date(b.time));
-        return rows;
-      } catch (e) {
-        console.error("載入資料錯誤", e);
-        document.getElementById("status").innerText = "❌ 資料載入錯誤";
-        return [];
-      }
-    }
-
-    // === 初始化地圖 ===
-    async function initMap() {
-      const data = await fetchData();
-      if (data.length === 0) {
-        document.getElementById("status").innerText = "⚠️ 尚無資料";
+    function startRecording() {
+      if (!navigator.geolocation) {
+        alert("此瀏覽器不支援定位");
         return;
       }
 
-      map = L.map('map').setView([data[0].lat, data[0].lng], 15);
+      alert("開始記錄，每 10 秒上傳一次位置");
 
-      // 使用 OpenStreetMap 圖磚（完全免費）
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap 貢獻者'
-      }).addTo(map);
+      timer = setInterval(() => {
+        navigator.geolocation.getCurrentPosition(async pos => {
+          const { latitude, longitude } = pos.coords;
+          document.getElementById("output").textContent =
+            `座標: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
 
-      const path = data.map(p => [p.lat, p.lng]);
-      route = L.polyline(path, { color: 'red' }).addTo(map);
+          const formData = new URLSearchParams();
+          formData.append('lat', latitude);
+          formData.append('lng', longitude);
 
-      startMarker = L.marker(path[0]).addTo(map).bindPopup("起點");
-      endMarker = L.marker(path[path.length - 1]).addTo(map).bindPopup("終點");
-
-      map.fitBounds(route.getBounds());
-      document.getElementById("status").innerText = `✅ 已載入 ${data.length} 筆資料`;
-
-      lastDataLength = data.length;
-      setInterval(updateRoute, refreshInterval);
+          try {
+            const res = await fetch(scriptURL, {
+              method: 'POST',
+              body: formData
+            });
+            const text = await res.text();
+            console.log("上傳成功:", text);
+          } catch (err) {
+            console.error("上傳失敗", err);
+          }
+        }, err => {
+          console.error("定位失敗：" + err.message);
+        });
+      }, 10000); // 每 10 秒執行一次
     }
 
-    // === 更新資料 ===
-    async function updateRoute() {
-      const data = await fetchData();
-      if (data.length === 0) return;
-
-      if (data.length !== lastDataLength) {
-        const path = data.map(p => [p.lat, p.lng]);
-        route.setLatLngs(path);
-        endMarker.setLatLng(path[path.length - 1]);
-
-        document.getElementById("status").innerText =
-          `🔄 更新時間：${new Date().toLocaleTimeString()}（共 ${data.length} 筆）`;
-
-        lastDataLength = data.length;
-        map.fitBounds(route.getBounds());
+    function stopRecording() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+        alert("已停止記錄");
       }
     }
-
-    // 啟動
-    initMap();
   </script>
+</head>
+<body>
+  <h2>校車 GPS 記錄系統</h2>
+  <button onclick="startRecording()">開始記錄</button>
+  <button onclick="stopRecording()">停止記錄</button>
+  <p id="output">尚未開始記錄</p>
 </body>
 </html>
