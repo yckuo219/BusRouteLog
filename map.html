@@ -30,72 +30,96 @@
       cursor: pointer;
     }
     button:hover { background: #005fcc; }
+    #status {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #333;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
   <div id="menu">
     <button onclick="location.href='index.html'">返回記錄頁</button>
+    <div id="status">載入中...</div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
   <script>
-    const sheetID = "12KJUVKw9hKgWN2894agnsSwQoO0X8zI4_P2_Q9kvzyU"; // ← 換成你的試算表 ID
+    const sheetID = "12KJUVKw9hKgWN2894agnsSwQoO0X8zI4_P2_Q9kvzyU"; // 你的試算表 ID
     const sheetURL = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json`;
 
+    let map, route, startMarker, endMarker;
+    let lastDataLength = 0;
+
+    // 🔹 抓取 Google 試算表資料
     async function fetchData() {
-      const res = await fetch(sheetURL + "&rand=" + Math.random());
-      const text = await res.text();
-      const json = JSON.parse(text.substr(47).slice(0, -2));
-      return json.table.rows.map(r => ({
-        time: r.c[0]?.v,
-        lat: parseFloat(r.c[1]?.v),
-        lng: parseFloat(r.c[2]?.v)
-      })).filter(d => !isNaN(d.lat) && !isNaN(d.lng));
+      try {
+        const res = await fetch(sheetURL + "&rand=" + Math.random());
+        const text = await res.text();
+        const json = JSON.parse(text.substr(47).slice(0, -2));
+        return json.table.rows.map(r => ({
+          time: r.c[0]?.v,
+          lat: parseFloat(r.c[1]?.v),
+          lng: parseFloat(r.c[2]?.v)
+        })).filter(d => !isNaN(d.lat) && !isNaN(d.lng));
+      } catch (err) {
+        console.error("讀取資料失敗", err);
+        return [];
+      }
     }
 
+    // 🔹 初始化地圖
     async function initMap() {
       const data = await fetchData();
       if (data.length === 0) {
-        alert("⚠️ 尚無座標資料");
+        document.getElementById("status").innerText = "⚠️ 尚無座標資料";
         return;
       }
 
-      const map = L.map('map').setView([data[0].lat, data[0].lng], 15);
+      map = L.map('map').setView([data[0].lat, data[0].lng], 15);
 
-      // 🗺️ 只顯示道路與標籤（最乾淨風格）
+      // 🗺️ 乾淨風格的地圖（僅道路與標籤）
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap'
       }).addTo(map);
 
       const path = data.map(p => [p.lat, p.lng]);
-      L.polyline(path, { color: 'red' }).addTo(map);
 
-      L.marker(path[0]).addTo(map).bindPopup("起點");
-      L.marker(path[path.length - 1]).addTo(map).bindPopup("終點");
+      route = L.polyline(path, { color: 'red', weight: 4 }).addTo(map);
+      startMarker = L.marker(path[0]).addTo(map).bindPopup("起點");
+      endMarker = L.marker(path[path.length - 1]).addTo(map).bindPopup("終點");
 
-      map.fitBounds(L.polyline(path).getBounds());
+      map.fitBounds(route.getBounds());
+
+      document.getElementById("status").innerText =
+        `✅ 已載入 ${data.length} 筆資料（${new Date().toLocaleTimeString()}）`;
+
+      lastDataLength = data.length;
     }
 
+    // 🔹 每 10 秒自動更新
     async function updateRoute() {
       const data = await fetchData();
       if (data.length === 0) return;
 
+      const path = data.map(p => [p.lat, p.lng]);
+      route.setLatLngs(path);
+      endMarker.setLatLng(path[path.length - 1]);
+
+      document.getElementById("status").innerText =
+        `🔄 更新時間：${new Date().toLocaleTimeString()}（共 ${data.length} 筆）`;
+
+      // 若資料變動顯著，重新縮放
       if (data.length !== lastDataLength) {
-        const path = data.map(p => [p.lat, p.lng]);
-        route.setLatLngs(path);
-        endMarker.setLatLng(path[path.length - 1]);
-
-        document.getElementById("status").innerText =
-          `🔄 更新時間：${new Date().toLocaleTimeString()}（共 ${data.length} 筆）`;
-
-        lastDataLength = data.length;
         map.fitBounds(route.getBounds());
+        lastDataLength = data.length;
       }
     }
 
-    initMap();
+    // 初始化 + 自動更新
+    initMap().then(() => setInterval(updateRoute, 10000));
   </script>
 </body>
 </html>
