@@ -3,6 +3,27 @@
 <head>
   <meta charset="utf-8">
   <title>校車 GPS 記錄</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      text-align: center;
+      background: #f3f3f3;
+      padding-top: 60px;
+    }
+    button {
+      font-size: 18px;
+      margin: 10px;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      background: #0078ff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover { background: #005fcc; }
+    #output { margin-top: 20px; font-size: 16px; color: #444; }
+  </style>
   <script>
     let timer = null;
     const scriptURL = "https://script.google.com/macros/s/AKfycbzhqtkOrzngX2ArPeyMsDihBnJUA5TBzhBf5q4iHol8oyP740bbTowfUfxcvxE9QlMx/exec";
@@ -54,6 +75,7 @@
   <h2>校車 GPS 記錄系統</h2>
   <button onclick="startRecording()">開始記錄</button>
   <button onclick="stopRecording()">停止記錄</button>
+  <button onclick="location.href='map.html'">查看地圖</button>
   <p id="output">尚未開始記錄</p>
 </body>
 </html>
