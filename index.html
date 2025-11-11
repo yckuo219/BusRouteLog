@@ -4,13 +4,14 @@
   <meta charset="utf-8">
   <title>校車 GPS 即時路線圖</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Leaflet 樣式 -->
+
+  <!-- ✅ 使用新版 Leaflet（移除 integrity） -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-sA+4g5l9wM0JtM+Qe0PZs6wl7QbF8pF7xPUp1H2y8b8="
     crossorigin=""
   />
+
   <style>
     html, body { height: 100%; margin: 0; }
     #map { height: 100%; width: 100%; }
@@ -30,10 +31,9 @@
   <div id="map"></div>
   <div id="status">資料載入中...</div>
 
-  <!-- Leaflet JS -->
+  <!-- ✅ Leaflet JS（移除 integrity） -->
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-o9N1j8Mk1x4zlJ6NJ9N1kvu1jHhjYniwE1XnU20+6+o="
     crossorigin="">
   </script>
 
